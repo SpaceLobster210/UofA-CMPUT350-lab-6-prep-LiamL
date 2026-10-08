@@ -76,7 +76,6 @@ void ZoomApp::handleEvent(const sf::Event& event) {
 // world when unzoomed.
 void ZoomApp::updateViewAfterResize() {
     // ====== ====== ======
-    // TODO:
     //      Enforce original aspect ratio of mWorldSize in the viewports of
     //      mWorldViewDefault and mWorldViewZoomed, when window resizes.
     //      The world view should be expanded/shrinked uniformly to fit in and be centered in the
@@ -88,9 +87,30 @@ void ZoomApp::updateViewAfterResize() {
     //      Color::Black in render()
     // ====== ====== ======
 
-    // Calculate newViewport based on aspect ratios of window and of mWorldSize. Then:
-    // mWorldViewDefault.setViewport(newViewport);
-    // mWorldViewZoomed.setViewport(newViewport);
+    // Calculate newViewport based on aspect ratios of window and of mWorldSize.
+    float windowAspect = static_cast<float>(mWindow.getSize().x) / static_cast<float>(mWindow.getSize().y);
+    float worldAspect = DEFAULT_MAX_WORLD_WIDTH / DEFAULT_MAX_WORLD_HEIGHT;
+    std::cout << windowAspect << " " << worldAspect << "\n";
+
+    float xScale;
+    float yScale;
+
+    if (windowAspect < worldAspect) {
+        // Window is taller than view
+        xScale = 1.0f;
+        yScale = windowAspect / worldAspect;
+    }
+    else {
+        // Window is wider than view
+        xScale = worldAspect / windowAspect;
+        yScale = 1.0f;
+    }
+    std::cout << xScale << " " << yScale << "\n";
+    sf::FloatRect newViewport(sf::Vector2f((1.0f - xScale) / 2, (1.0f - yScale) / 2), sf::Vector2f(xScale, yScale));
+
+    // Update WorldViews
+    mWorldViewDefault.setViewport(newViewport);
+    mWorldViewZoomed.setViewport(newViewport);
 }
 
 // updateZoomView sets the center of mWorldViewZoomed such that the zoomed view would have the
@@ -115,9 +135,11 @@ void ZoomApp::updateZoomView(sf::Vector2i mousePos) {
 void ZoomApp::render() {
     mWindow.clear(sf::Color::Black);
     if (!mIsZooming) {
-        // TODO: If the user is not zooming in, use the default world view.
+        // If the user is not zooming in, use the default world view.
+        mWindow.setView(mWorldViewDefault);
     } else {
-        // TODO: If the user is zooming in, use the zoomed world view.
+        // If the user is zooming in, use the zoomed world view.
+        mWindow.setView(mWorldViewZoomed);
     }
     mWindow.draw(*mWaldoSprite);
     mWindow.display();
